@@ -24,11 +24,25 @@ import java.util.List;
 import java.util.Random;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
+import io.intercom.android.sdk.push.IntercomPushClient;
 
 public class RNPushNotificationListenerService extends FirebaseMessagingService {
 
+    private final IntercomPushClient intercomPushClient = new IntercomPushClient();
+
     @Override
     public void onMessageReceived(RemoteMessage message) {
+
+        /// START
+        /// Intercom push notification handling
+        Map<String, String> message = remoteMessage.getData();
+        if (intercomPushClient.isIntercomPush(message)) {
+            intercomPushClient.handlePush(getApplication(), message);
+            return
+        }
+        /// END
+
+
         String from = message.getFrom();
 
         final Bundle bundle = new Bundle();
@@ -141,5 +155,11 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
             }
         }
         return false;
+    }
+
+    @Override
+    public void onNewToken(String s) {
+        super.onNewToken(s);
+        intercomPushClient.sendTokenToIntercom(getApplication(), s);
     }
 }
