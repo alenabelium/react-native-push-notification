@@ -35,10 +35,10 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
 
         /// START
         /// Intercom push notification handling
-        Map<String, String> message = remoteMessage.getData();
-        if (intercomPushClient.isIntercomPush(message)) {
-            intercomPushClient.handlePush(getApplication(), message);
-            return
+        Map<String, String> msg = message.getData();
+        if (intercomPushClient.isIntercomPush(msg)) {
+            intercomPushClient.handlePush(getApplication(), msg);
+            return;
         }
         /// END
 
@@ -157,9 +157,4 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
         return false;
     }
 
-    @Override
-    public void onNewToken(String s) {
-        super.onNewToken(s);
-        intercomPushClient.sendTokenToIntercom(getApplication(), s);
-    }
 }
