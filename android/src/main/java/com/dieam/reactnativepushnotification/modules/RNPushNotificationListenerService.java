@@ -25,6 +25,7 @@ import java.util.Random;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
 import io.intercom.android.sdk.push.IntercomPushClient;
+import io.intercom.android.sdk.Intercom;
 
 public class RNPushNotificationListenerService extends FirebaseMessagingService {
 
@@ -37,6 +38,13 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
         /// Intercom push notification handling
         Map<String, String> msg = message.getData();
         if (intercomPushClient.isIntercomPush(msg)) {
+            try {
+                int conversationCount = Intercom.client().getUnreadConversationCount();
+                ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(getApplicationContext(), conversationCount);
+
+            } catch (Exception ex) {
+                Log.e("Intercom", "logEvent - unable to get conversation count");
+            }
             intercomPushClient.handlePush(getApplication(), msg);
             return;
         }
