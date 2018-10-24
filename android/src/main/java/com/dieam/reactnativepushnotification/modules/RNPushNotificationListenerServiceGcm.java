@@ -1,9 +1,5 @@
 package com.dieam.reactnativepushnotification.modules;
 
-import java.util.Map;
-import com.google.firebase.messaging.FirebaseMessagingService;
-import com.google.firebase.messaging.RemoteMessage;
-
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
@@ -17,6 +13,7 @@ import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
+import com.google.android.gms.gcm.GcmListenerService; 
 
 import org.json.JSONObject;
 
@@ -24,48 +21,11 @@ import java.util.List;
 import java.util.Random;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
-import io.intercom.android.sdk.push.IntercomPushClient;
-import io.intercom.android.sdk.Intercom;
 
-public class RNPushNotificationListenerService extends FirebaseMessagingService {
-
-    private final IntercomPushClient intercomPushClient = new IntercomPushClient();
+public class RNPushNotificationListenerServiceGcm extends GcmListenerService {
 
     @Override
-    public void onMessageReceived(RemoteMessage message) {
-
-        /// START
-        /// Intercom push notification handling
-        Map<String, String> msg = message.getData();
-        if (intercomPushClient.isIntercomPush(msg)) {
-            try {
-                int conversationCount = Intercom.client().getUnreadConversationCount();
-                ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(getApplicationContext(), conversationCount);
-
-            } catch (Exception ex) {
-                Log.e("Intercom", "logEvent - unable to get conversation count");
-            }
-            intercomPushClient.handlePush(getApplication(), msg);
-            return;
-        }
-        /// END
-
-
-        String from = message.getFrom();
-        RemoteMessage.Notification remoteNotification = message.getNotification();
-
-        final Bundle bundle = new Bundle();
-        // Putting it from remoteNotification first so it can be overriden if message
-        // data has it
-        if (remoteNotification != null) {
-            // ^ It's null when message is from GCM
-            bundle.putString("title", remoteNotification.getTitle());
-            bundle.putString("message", remoteNotification.getBody());
-        }
-
-        for(Map.Entry<String, String> entry : message.getData().entrySet()) {
-            bundle.putString(entry.getKey(), entry.getValue());
-        }
+    public void onMessageReceived(String from, final Bundle bundle) { 
         JSONObject data = getPushData(bundle.getString("data"));
         // Copy `twi_body` to `message` to support Twilio
         if (bundle.containsKey("twi_body")) {
@@ -152,9 +112,11 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
 
         Log.v(LOG_TAG, "sendNotification: " + bundle);
 
-        Application applicationContext = (Application) context.getApplicationContext();
-        RNPushNotificationHelper pushNotificationHelper = new RNPushNotificationHelper(applicationContext);
-        pushNotificationHelper.sendToNotificationCentre(bundle);
+        if (!isForeground) {
+            Application applicationContext = (Application) context.getApplicationContext();
+            RNPushNotificationHelper pushNotificationHelper = new RNPushNotificationHelper(applicationContext);
+            pushNotificationHelper.sendToNotificationCentre(bundle);
+        }
     }
 
     private boolean isApplicationInForeground() {
@@ -173,5 +135,4 @@ public class RNPushNotificationListenerService extends FirebaseMessagingService 
         }
         return false;
     }
-
 }
